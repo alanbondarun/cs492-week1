@@ -1,5 +1,11 @@
 .gradle
-build/
+.idea
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/captures
 
 # Ignore Gradle GUI config
 gradle-app.setting
