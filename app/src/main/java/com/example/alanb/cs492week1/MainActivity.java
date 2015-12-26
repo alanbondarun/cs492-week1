@@ -1,5 +1,7 @@
 package com.example.alanb.cs492week1;
 
+import android.support.v7.app.AppCompatActivity;
+
 
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
@@ -9,8 +11,22 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import android.app.FragmentTransaction;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.util.Log;
 
-public class MainActivity extends AppCompatActivity {
+import com.facebook.AccessToken;
+import com.facebook.FacebookSdk;
+
+import java.util.Arrays;
+
+public class MainActivity extends AppCompatActivity
+{
+    public static final String TAG = "MainActivity";
+    public static final String ACCESS_TOKEN_KEY = "access_token";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +62,11 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+        /* initialize Facebook SDK */
+        FacebookSdk.sdkInitialize(this);
     }
+
     /*
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -60,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
     */
