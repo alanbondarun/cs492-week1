@@ -1,5 +1,6 @@
 package com.example.alanb.cs492week1;
 
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
@@ -32,34 +33,6 @@ public class FBLoginFragment extends Fragment
     private LoginButton loginButton;
 
     @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
-
-        m_callbackManager = CallbackManager.Factory.create();
-        LoginManager.getInstance().registerCallback(m_callbackManager, new FacebookCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-                Log.d(TAG, "Login success");
-                AccessToken.setCurrentAccessToken(loginResult.getAccessToken());
-            }
-
-            @Override
-            public void onCancel() {
-                Log.d(TAG, "Login cancel");
-
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-                Log.d(TAG, "Login error");
-
-            }
-        });
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
         Log.d(TAG, "onCreateView");
@@ -70,9 +43,17 @@ public class FBLoginFragment extends Fragment
         loginButton.setFragment(this);
 
         // Callback registration
+        m_callbackManager = CallbackManager.Factory.create();
         loginButton.registerCallback(m_callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
+                Log.d(TAG, "Login success");
+                AccessToken.setCurrentAccessToken(loginResult.getAccessToken());
+
+                /* replace this fragment with FBShowFragment */
+                FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                transaction.replace(R.id.fb_fragment_container, new FBShowFragment(), FBShowFragment.TAG);
+                transaction.commit();
             }
 
             @Override

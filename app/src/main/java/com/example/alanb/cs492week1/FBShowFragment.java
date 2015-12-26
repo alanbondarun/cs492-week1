@@ -27,7 +27,7 @@ import java.util.Map;
  */
 public class FBShowFragment extends Fragment
 {
-    private final static String TAG = "FBShowFragment";
+    public final static String TAG = "FBShowFragment";
     private ListView m_fbItemView;
     private SimpleAdapter m_fbItemAdapter;
     private ArrayList<String> m_keyStrings;

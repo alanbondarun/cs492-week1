@@ -18,23 +18,21 @@ import com.facebook.FacebookSdk;
 public class TabFragment1 extends Fragment {
     private final static String TAG = "TabFragment1";
 
+    private Fragment currentFragment;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.tab_fragment_1, container, false);
 
+        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if (AccessToken.getCurrentAccessToken() == null) {
-            FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-
-            FBLoginFragment fbLoginFragment = new FBLoginFragment();
-            fragmentTransaction.add(R.id.fb_fragment_container, fbLoginFragment);
-            fragmentTransaction.commit();
+            currentFragment = new FBLoginFragment();
+            fragmentTransaction.add(R.id.fb_fragment_container, currentFragment, FBLoginFragment.TAG);
         } else {
-            FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-
-            FBShowFragment fbShowFragment = new FBShowFragment();
-            fragmentTransaction.add(R.id.fb_fragment_container, fbShowFragment);
-            fragmentTransaction.commit();
+            currentFragment = new FBShowFragment();
+            fragmentTransaction.add(R.id.fb_fragment_container, currentFragment, FBShowFragment.TAG);
         }
+        fragmentTransaction.commit();
 
         return view;
     }
