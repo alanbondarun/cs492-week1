@@ -35,19 +35,18 @@ public class FBLoginFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
-        Log.d(TAG, "onCreateView");
         View view = inflater.inflate(R.layout.fb_login, container, false);
 
+        // add the facebook login button
         loginButton = (LoginButton) view.findViewById(R.id.login_button);
         loginButton.setReadPermissions(Arrays.asList("public_profile", "user_about_me", "email", "user_birthday", "user_hometown"));
         loginButton.setFragment(this);
 
-        // Callback registration
+        // Callback function registration
         m_callbackManager = CallbackManager.Factory.create();
         loginButton.registerCallback(m_callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-                Log.d(TAG, "Login success");
                 AccessToken.setCurrentAccessToken(loginResult.getAccessToken());
 
                 /* replace this fragment with FBShowFragment */
@@ -72,6 +71,8 @@ public class FBLoginFragment extends Fragment
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         super.onActivityResult(requestCode, resultCode, data);
+
+        // forward to the callback manager
         m_callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 }

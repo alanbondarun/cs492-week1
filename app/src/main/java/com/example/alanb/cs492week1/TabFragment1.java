@@ -18,18 +18,19 @@ import com.facebook.FacebookSdk;
 public class TabFragment1 extends Fragment {
     private final static String TAG = "TabFragment1";
 
-    private Fragment currentFragment;
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.tab_fragment_1, container, false);
 
+        /* adds the appropriate child fragment to this fragment.
+         * adds FBLoginFragment if the user has not logged in; otherwise, adds FBShowFragment.
+         */
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if (AccessToken.getCurrentAccessToken() == null) {
-            currentFragment = new FBLoginFragment();
+            Fragment currentFragment = new FBLoginFragment();
             fragmentTransaction.add(R.id.fb_fragment_container, currentFragment, FBLoginFragment.TAG);
         } else {
-            currentFragment = new FBShowFragment();
+            Fragment currentFragment = new FBShowFragment();
             fragmentTransaction.add(R.id.fb_fragment_container, currentFragment, FBShowFragment.TAG);
         }
         fragmentTransaction.commit();
