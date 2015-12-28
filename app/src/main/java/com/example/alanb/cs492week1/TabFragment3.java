@@ -3,6 +3,8 @@ package com.example.alanb.cs492week1;
 /**
  * Created by shinjaemin on 2015. 12. 23..
  */
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Bundle;
@@ -40,6 +42,9 @@ public class TabFragment3 extends Fragment
 
     // an OmokBoard
     private OmokBoard m_board;
+
+    // true if the game is finishing
+    private boolean m_isFinishing = false;
 
     // hard-coded vertex & fragment shader
     private static final String vertexShaderCode =
@@ -186,6 +191,8 @@ public class TabFragment3 extends Fragment
     @Override
     public void onViewTouched(MotionEvent e)
     {
+        Log.d(TAG, "onViewTouched");
+
         float x = e.getX();
         float y = e.getY();
 
@@ -196,6 +203,50 @@ public class TabFragment3 extends Fragment
                 convertToModelCoord(x, y, modelCoord);
                 m_board.addObject(modelCoord);
                 break;
+        }
+
+        if (!m_isFinishing) {
+            OmokBoard.GameState gameState = m_board.isGameFinished();
+            if (gameState == OmokBoard.GameState.GAME_BLACK_WON) {
+                m_isFinishing = true;
+                AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
+                alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        m_board.init();
+                        m_isFinishing = false;
+                    }
+                });
+                alert.setMessage("Black Won!");
+                alert.show();
+            } else if (gameState == OmokBoard.GameState.GAME_WHITE_WON) {
+                m_isFinishing = true;
+                AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
+                alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        m_board.init();
+                        m_isFinishing = false;
+                    }
+                });
+                alert.setMessage("White Won!");
+                alert.show();
+            } else if (gameState == OmokBoard.GameState.GAME_STALEMATE) {
+                m_isFinishing = true;
+                AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
+                alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        m_board.init();
+                        m_isFinishing = false;
+                    }
+                });
+                alert.setMessage("Tie!");
+                alert.show();
+            }
         }
     }
 }
