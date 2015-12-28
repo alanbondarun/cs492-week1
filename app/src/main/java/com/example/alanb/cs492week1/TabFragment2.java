@@ -4,6 +4,8 @@ package com.example.alanb.cs492week1;
  * Created by shinjaemin on 2015. 12. 23..
  */
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -27,14 +29,14 @@ public class TabFragment2 extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.tab_fragment_2, container, false);
         /* adds the appropriate child fragment to this fragment.
-         * adds FBLoginFragment if the user has not logged in; otherwise, adds FBShowFragment.
          */
         mic = new MyInnerClass(this.getActivity(), view);
         mic.execute("http://comic.naver.com/webtoon/weekdayList.nhn?week=sat");
         return view;
     }
     private class MyInnerClass extends AsyncTask<String, Void, String> {
-        String[] res = new String[31];
+        String[] res = new String[27];
+        String[] res2 = new String[27];
         private Context micContext;
         private View micView;
 
@@ -51,18 +53,23 @@ public class TabFragment2 extends Fragment {
         @Override
         protected String doInBackground(String... urls) {
             try {
-                //Document doc = Jsoup.connect("http://comic.naver.com/webtoon/weekdayList.nhn?week=sat").get();
                 Document doc = Jsoup.connect(urls[0]).get();
-                Elements satWT = doc.select("img[src$=.jpg]");
+                //Elements satWT = doc.select("div.thumb img[src]");
+                Elements satWT = doc.select("img[src]");
                 String printWT = satWT.toString();
-                String[] resWT = printWT.split(" src=", 33);
-                char[] tmp = new char[110];
-                String[] tmp2 = new String[2];
-                for (int i = 1; i < resWT.length - 1; i++) {
-                    System.arraycopy(resWT[i].toCharArray(), 1, tmp, 0, tmp.length);
-                    tmp2 = (new String(tmp)).split("\"", 3);
-                    res[i - 1] = tmp2[0];
-                }
+                String[] resWT = printWT.split("\"");
+                int index = 0;
+                for(String s:resWT)
+                    if(s.contains("http://thumb.") && index!=27)
+                        res[index++] = s;
+                Elements sat2WT = doc.select("a[href*=/webtoon/list.nhn?]");
+                String print2WT = sat2WT.toString();
+                String[] res2WT = print2WT.split("\"");
+                int index2 = 0;
+                for(String s:res2WT)
+                    if(s.contains("/webtoon/list.nhn?titleId") && index2!=27)
+                        res2[index2++] = "http://comic.naver.com"+s;
+
             }catch(IOException ie){
             }
             return "Done";
@@ -73,13 +80,14 @@ public class TabFragment2 extends Fragment {
             super.onPostExecute(result);
             GridView gridview = (GridView) micView.findViewById(R.id.gridview);
             gridview.setAdapter(new ImageAdapter(micContext, res));
-
             gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 public void onItemClick(AdapterView<?> parent, View v,
                                         int position, long id) {
-                    Toast.makeText(micContext, "" + position,
-                            Toast.LENGTH_SHORT).show();
+                    Uri uri = Uri.parse(res2[position]);
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    micContext.startActivity(intent);
                 }
+
             });
         }
     }
