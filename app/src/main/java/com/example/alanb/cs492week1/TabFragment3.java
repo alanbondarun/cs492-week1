@@ -11,6 +11,7 @@ import android.os.Looper;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -21,7 +22,8 @@ import java.nio.IntBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class TabFragment3 extends Fragment implements GLTextureView.Renderer
+public class TabFragment3 extends Fragment
+        implements GLTextureView.Renderer, ViewTouchEventListener
 {
     private final static String TAG = "TabFragment3";
 
@@ -37,7 +39,7 @@ public class TabFragment3 extends Fragment implements GLTextureView.Renderer
     private float m_height = 0;
 
     // an OmokBoard
-    private OmokBoard board;
+    private OmokBoard m_board;
 
     // hard-coded vertex & fragment shader
     private static final String vertexShaderCode =
@@ -66,6 +68,7 @@ public class TabFragment3 extends Fragment implements GLTextureView.Renderer
         glTextureView.setVersion(GLTextureView.GLESVersion.OpenGLES20);
         glTextureView.setRenderingThreadType(GLTextureView.RenderingThreadType.BackgroundThread);
         glTextureView.setRenderer(this);
+        glTextureView.setViewTouchEventListener(this);
 
         return glTextureView;
     }
@@ -124,7 +127,7 @@ public class TabFragment3 extends Fragment implements GLTextureView.Renderer
         convertToModelCoord(width/2 + PIXEL_SPACE_SIZE, height/2 + PIXEL_SPACE_SIZE, spaceCoord);
         float[] endCoord = new float[4];
         convertToModelCoord(width, height, endCoord);
-        board = new OmokBoard(m_program, spaceCoord[0],
+        m_board = new OmokBoard(m_program, spaceCoord[0],
                 Math.round((float)(Math.floor(endCoord[0]/spaceCoord[0] - 0.5))) * 2 + 1,
                 Math.round((float)(Math.floor(endCoord[1]/spaceCoord[1] - 0.5))) * 2 + 1);
     }
@@ -135,7 +138,7 @@ public class TabFragment3 extends Fragment implements GLTextureView.Renderer
         // clear the screen
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-        board.draw(m_VPMatrix);
+        m_board.draw(m_VPMatrix);
     }
 
     @Override
@@ -161,7 +164,7 @@ public class TabFragment3 extends Fragment implements GLTextureView.Renderer
     }
 
     // convert viewport coordinate -> model coordinate
-    public void convertToModelCoord(int x, int y, float[] modelCoord)
+    public void convertToModelCoord(float x, float y, float[] modelCoord)
     {
         float viewport_x = (x - m_width/2.0f) / (m_width/2.0f);
         float viewport_y = (y - m_height/2.0f) / (m_height/2.0f);
@@ -178,5 +181,21 @@ public class TabFragment3 extends Fragment implements GLTextureView.Renderer
         modelCoord[1] = viewport_y * YScaleFactor;
         modelCoord[2] = 1.0f * ZScaleFactor;            // not verified...
         modelCoord[3] = 1;
+    }
+
+    @Override
+    public void onViewTouched(MotionEvent e)
+    {
+        float x = e.getX();
+        float y = e.getY();
+
+        switch (e.getAction())
+        {
+            case MotionEvent.ACTION_DOWN:
+                float[] modelCoord = new float[4];
+                convertToModelCoord(x, y, modelCoord);
+                m_board.addObject(modelCoord);
+                break;
+        }
     }
 }
