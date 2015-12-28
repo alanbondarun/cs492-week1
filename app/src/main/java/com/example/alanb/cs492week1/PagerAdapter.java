@@ -3,16 +3,20 @@ package com.example.alanb.cs492week1;
 /**
  * Created by shinjaemin on 2015. 12. 23..
  */
+import android.content.Context;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
 public class PagerAdapter extends FragmentStatePagerAdapter {
     int mNumOfTabs;
+    Context currContext;
 
-    public PagerAdapter(FragmentManager fm, int NumOfTabs) {
+    public PagerAdapter(FragmentManager fm, int NumOfTabs, Context cContext) {
         super(fm);
         this.mNumOfTabs = NumOfTabs;
+        this.currContext = cContext;
     }
 
     @Override
