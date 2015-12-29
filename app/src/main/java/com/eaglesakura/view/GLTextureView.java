@@ -289,6 +289,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
             }
 
             initialized = true;
+            destroyed = false;
             if (renderingThreadType == RenderingThreadType.BackgroundThread) {
                 // background
                 backgroundThread = createRenderingThread();
@@ -343,7 +344,12 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
             eglManager.destroy();
         }
 
-        // auto release
+        initialized = false;
+        eglManager = null;
+        eglConfigChooser = null;
+        backgroundThread = null;
+
+        // auto release others
         return true;
 
     }

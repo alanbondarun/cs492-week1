@@ -66,17 +66,23 @@ public class TabFragment3 extends Fragment
     private final int PIXEL_SPACE_SIZE = 75;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+    public void onCreate(Bundle savedInstanceState)
     {
+        super.onCreate(savedInstanceState);
         // glTextureView setup
         glTextureView = new GLTextureView(getContext());
         glTextureView.setVersion(GLTextureView.GLESVersion.OpenGLES20);
         glTextureView.setRenderingThreadType(GLTextureView.RenderingThreadType.BackgroundThread);
         glTextureView.setRenderer(this);
         glTextureView.setViewTouchEventListener(this);
+        glTextureView.setBackgroundColor(0xffffffff);
+    }
 
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+    {
         // get m_board from the bundle if available
-        if (savedInstanceState != null)
+        if (m_board == null && savedInstanceState != null)
         {
             m_board = savedInstanceState.getParcelable("m_board");
             m_isFinishing = savedInstanceState.getBoolean("m_isFinishing");
