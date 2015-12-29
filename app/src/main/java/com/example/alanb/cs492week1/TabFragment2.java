@@ -9,11 +9,18 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.GridView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import org.jsoup.Jsoup;
@@ -39,6 +46,7 @@ public class TabFragment2 extends Fragment {
         String[] res2 = new String[27];
         private Context micContext;
         private View micView;
+        private WebView wv;
 
         MyInnerClass (Context context, View view){
             micContext = context;
@@ -71,6 +79,7 @@ public class TabFragment2 extends Fragment {
                         res2[index2++] = "http://comic.naver.com"+s;
 
             }catch(IOException ie){
+
             }
             return "Done";
         }
@@ -78,17 +87,46 @@ public class TabFragment2 extends Fragment {
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
+            final LinearLayout imageV = (LinearLayout) micView.findViewById(R.id.linearlayout1);
+            final LinearLayout webV = (LinearLayout) micView.findViewById(R.id.linearlayout2);
+            final Button backButton = (Button) micView.findViewById(R.id.buttonBack);
+            webV.setVisibility(View.GONE);
+
             GridView gridview = (GridView) micView.findViewById(R.id.gridview);
             gridview.setAdapter(new ImageAdapter(micContext, res));
             gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 public void onItemClick(AdapterView<?> parent, View v,
                                         int position, long id) {
-                    Uri uri = Uri.parse(res2[position]);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                    micContext.startActivity(intent);
+                    imageV.setVisibility(View.GONE);
+                    webV.setVisibility(View.VISIBLE);
+                    wv = (WebView) micView.findViewById(R.id.webview);
+                    wv.setWebViewClient(new WebClient());
+                    WebSettings set = wv.getSettings();
+                    set.setJavaScriptEnabled(true);
+                    wv.loadUrl(res2[position]);
+                    set.setCacheMode((WebSettings.LOAD_NO_CACHE));
+                    set.setSupportZoom(false);
+                    backButton.setVisibility(View.VISIBLE);
                 }
 
             });
+            backButton.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View view){
+                    if(wv.canGoBack())
+                        wv.goBack();
+                    else {
+                        imageV.setVisibility(View.VISIBLE);
+                        webV.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
+
+    }
+    class WebClient extends WebViewClient {
+        public boolean shouldOverrideUrlLoading(WebView view, String url){
+            view.loadUrl(url);
+            return true;
         }
     }
 }
