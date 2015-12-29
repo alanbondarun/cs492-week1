@@ -41,7 +41,7 @@ public class TabFragment3 extends Fragment
     private float m_height = 0;
 
     // an OmokBoard
-    private OmokBoard m_board;
+    private OmokBoard m_board = null;
 
     // true if the game is finishing
     private boolean m_isFinishing = false;
@@ -75,6 +75,17 @@ public class TabFragment3 extends Fragment
         glTextureView.setRenderer(this);
         glTextureView.setViewTouchEventListener(this);
 
+        // get m_board from the bundle if available
+        if (savedInstanceState != null)
+        {
+            m_board = savedInstanceState.getParcelable("m_board");
+            m_isFinishing = savedInstanceState.getBoolean("m_isFinishing");
+        }
+        else
+        {
+            m_board = null;
+        }
+
         return glTextureView;
     }
 
@@ -93,7 +104,15 @@ public class TabFragment3 extends Fragment
     }
 
     @Override
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+    public void onSaveInstanceState(Bundle outState)
+    {
+        outState.putParcelable("m_board", m_board);
+        outState.putBoolean("m_isFinishing", m_isFinishing);
+    }
+
+    @Override
+    public void onSurfaceCreated(GL10 gl, EGLConfig config)
+    {
         // set the background color to white
         GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -111,7 +130,8 @@ public class TabFragment3 extends Fragment
     }
 
     @Override
-    public void onSurfaceChanged(GL10 gl, int width, int height) {
+    public void onSurfaceChanged(GL10 gl, int width, int height)
+    {
         GLES20.glViewport(0, 0, width, height);
 
         // set the projection matrix
@@ -132,9 +152,15 @@ public class TabFragment3 extends Fragment
         convertToModelCoord(width/2 + PIXEL_SPACE_SIZE, height/2 + PIXEL_SPACE_SIZE, spaceCoord);
         float[] endCoord = new float[4];
         convertToModelCoord(width, height, endCoord);
-        m_board = new OmokBoard(m_program, spaceCoord[0],
-                Math.round((float)(Math.floor(endCoord[0]/spaceCoord[0] - 0.5))) * 2 + 1,
-                Math.round((float)(Math.floor(endCoord[1]/spaceCoord[1] - 0.5))) * 2 + 1);
+
+        // create the board only if the board is not restored from the saved states
+        if (m_board == null)
+        {
+            m_board = new OmokBoard(spaceCoord[0],
+                    Math.round((float)(Math.floor(endCoord[0]/spaceCoord[0] - 0.5))) * 2 + 1,
+                    Math.round((float)(Math.floor(endCoord[1]/spaceCoord[1] - 0.5))) * 2 + 1);
+        }
+        m_board.registerGLProgram(m_program);
     }
 
     @Override
@@ -142,13 +168,12 @@ public class TabFragment3 extends Fragment
     {
         // clear the screen
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
         m_board.draw(m_VPMatrix);
     }
 
     @Override
-    public void onSurfaceDestroyed(GL10 gl) {
-
+    public void onSurfaceDestroyed(GL10 gl)
+    {
     }
 
     // load the shader from the shader code
@@ -191,14 +216,12 @@ public class TabFragment3 extends Fragment
     @Override
     public void onViewTouched(MotionEvent e)
     {
-        Log.d(TAG, "onViewTouched");
-
         float x = e.getX();
         float y = e.getY();
 
         switch (e.getAction())
         {
-            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_UP:
                 float[] modelCoord = new float[4];
                 convertToModelCoord(x, y, modelCoord);
                 m_board.addObject(modelCoord);
@@ -207,7 +230,7 @@ public class TabFragment3 extends Fragment
 
         if (!m_isFinishing) {
             OmokBoard.GameState gameState = m_board.isGameFinished();
-            if (gameState == OmokBoard.GameState.GAME_BLACK_WON) {
+            if (gameState != OmokBoard.GameState.GAME_UNFINISHED) {
                 m_isFinishing = true;
                 AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
                 alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -218,33 +241,15 @@ public class TabFragment3 extends Fragment
                         m_isFinishing = false;
                     }
                 });
-                alert.setMessage("Black Won!");
-                alert.show();
-            } else if (gameState == OmokBoard.GameState.GAME_WHITE_WON) {
-                m_isFinishing = true;
-                AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
-                alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                        m_board.init();
-                        m_isFinishing = false;
-                    }
-                });
-                alert.setMessage("White Won!");
-                alert.show();
-            } else if (gameState == OmokBoard.GameState.GAME_STALEMATE) {
-                m_isFinishing = true;
-                AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
-                alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                        m_board.init();
-                        m_isFinishing = false;
-                    }
-                });
-                alert.setMessage("Tie!");
+                if (gameState == OmokBoard.GameState.GAME_BLACK_WON) {
+                    alert.setMessage("Black Won!");
+                } else if (gameState == OmokBoard.GameState.GAME_WHITE_WON) {
+                    alert.setMessage("White Won!");
+                } else if (gameState == OmokBoard.GameState.GAME_STALEMATE) {
+                    alert.setMessage("Tie!");
+                } else {
+                    alert.setMessage("Unknown Game State?!");
+                }
                 alert.show();
             }
         }

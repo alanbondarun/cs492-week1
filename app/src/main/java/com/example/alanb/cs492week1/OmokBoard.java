@@ -1,7 +1,8 @@
 package com.example.alanb.cs492week1;
 
 import android.opengl.GLES20;
-import android.util.Log;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -14,7 +15,7 @@ import java.util.ArrayList;
  */
 
 /* an Omok board */
-public class OmokBoard
+public class OmokBoard implements Parcelable
 {
     private final static String TAG = "OmokBoard";
 
@@ -26,7 +27,7 @@ public class OmokBoard
     private ArrayList<Short> m_drawList;
 
     // program used for OpenGL drawing
-    private int m_program;
+    private int m_program = 0;
 
     // buffer objects
     private FloatBuffer m_vertexBuffer;
@@ -39,19 +40,18 @@ public class OmokBoard
     private final float LINE_WIDTH = 0.01f;
 
     // threshold for the touch event
-    private final double THRESHOLD_TOUCH;
+    private double m_touchThreshold = 0;
 
     // list of Omokobject's
-    private ArrayList<OmokObject> listOmokObject = new ArrayList<>();
+    private ArrayList<OmokObject> m_listOmokObject = new ArrayList<>();
 
-    // lock for listOmokObject
-    private final Object lockListOmokObject = new Object();
+    // lock for m_listOmokObject
+    private final Object m_lockListOmokObject = new Object();
 
     private boolean isBlackTurn = true;
 
-    public OmokBoard(int program, float ScaleFactor, int rows, int cols)
+    public OmokBoard(float ScaleFactor, int rows, int cols)
     {
-        m_program = program;
         m_scaleFactor = ScaleFactor;
         m_rows = rows;
         m_cols = cols;
@@ -62,7 +62,7 @@ public class OmokBoard
         m_coordList = new ArrayList<>();
         m_drawList = new ArrayList<>();
 
-        THRESHOLD_TOUCH = ScaleFactor * 0.4;
+        m_touchThreshold = ScaleFactor * 0.4;
 
         // construct the board (vertical line)
         for (int x = -maxXCoord; x <= maxXCoord; x++)
@@ -136,21 +136,24 @@ public class OmokBoard
         }
         m_drawListBuffer.position(0);
 
-        // register the program
-        m_program = program;
-
         init();
     }
 
-    // initialize the board
+    // initialize the board states
     public void init()
     {
         // clear the list of objects
-        synchronized (lockListOmokObject)
+        synchronized (m_lockListOmokObject)
         {
-            listOmokObject.clear();
+            m_listOmokObject.clear();
         }
         isBlackTurn = true;
+    }
+
+    // register the OpenGL program
+    public void registerGLProgram(int program)
+    {
+        m_program = program;
     }
 
     // draw this board.
@@ -187,9 +190,9 @@ public class OmokBoard
         GLES20.glDisableVertexAttribArray(positionHandle);
 
         // draw the OmokObject
-        synchronized (lockListOmokObject)
+        synchronized (m_lockListOmokObject)
         {
-            for (OmokObject object: listOmokObject)
+            for (OmokObject object: m_listOmokObject)
             {
                 object.draw(VPMatrix);
             }
@@ -210,7 +213,7 @@ public class OmokBoard
             for (ypos = -maxYCoord; ypos <= maxYCoord; ypos++)
             {
                 double dist = Math.pow(XCoord - xpos, 2) + Math.pow(YCoord - ypos, 2);
-                if (dist < Math.pow(THRESHOLD_TOUCH, 2))
+                if (dist < Math.pow(m_touchThreshold, 2))
                 {
                     break;
                 }
@@ -224,9 +227,9 @@ public class OmokBoard
         if (xpos <= maxXCoord)
         {
             boolean samePosition = false;
-            synchronized (lockListOmokObject)
+            synchronized (m_lockListOmokObject)
             {
-                for (OmokObject object: listOmokObject)
+                for (OmokObject object: m_listOmokObject)
                 {
                     if (object.getXPos() == xpos && object.getYPos() == ypos)
                     {
@@ -237,13 +240,18 @@ public class OmokBoard
             }
             if (!samePosition)
             {
-                synchronized (lockListOmokObject)
-                {
-                    listOmokObject.add(new OmokObject(m_program, m_scaleFactor, xpos, ypos, isBlackTurn));
-                }
-                isBlackTurn = !isBlackTurn;
+                addObject(xpos, ypos);
             }
         }
+    }
+
+    public void addObject(int x, int y)
+    {
+        synchronized (m_lockListOmokObject)
+        {
+            m_listOmokObject.add(new OmokObject(m_program, m_scaleFactor, x, y, isBlackTurn));
+        }
+        isBlackTurn = !isBlackTurn;
     }
 
     public enum GameState
@@ -265,8 +273,8 @@ public class OmokBoard
         int minXCoord = -(m_rows - 1) / 2;
         int minYCoord = -(m_cols - 1) / 2;
 
-        synchronized (lockListOmokObject) {
-            for (OmokObject object : listOmokObject) {
+        synchronized (m_lockListOmokObject) {
+            for (OmokObject object : m_listOmokObject) {
                 if (object.isBlack()) {
                     boardState[object.getXPos() - minXCoord][object.getYPos() - minYCoord] = 1;
                 } else {
@@ -399,4 +407,57 @@ public class OmokBoard
 
         return gameState;
     }
+
+    // method for Parcelable interface
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(m_rows);
+        dest.writeInt(m_cols);
+        dest.writeFloat(m_scaleFactor);
+
+        synchronized (m_lockListOmokObject) {
+            int[] arrayPosX = new int[m_listOmokObject.size()];
+            int[] arrayPosY = new int[m_listOmokObject.size()];
+
+            for (int i=0; i<m_listOmokObject.size(); i++) {
+                arrayPosX[i] = m_listOmokObject.get(i).getXPos();
+                arrayPosY[i] = m_listOmokObject.get(i).getYPos();
+            }
+
+            dest.writeInt(arrayPosX.length);
+            dest.writeIntArray(arrayPosX);
+            dest.writeIntArray(arrayPosY);
+        }
+    }
+
+    public static final Parcelable.Creator<OmokBoard> CREATOR = new Parcelable.Creator<OmokBoard>() {
+        public OmokBoard createFromParcel(Parcel in) {
+            int num_xs = in.readInt();
+            int num_ys = in.readInt();
+            float scaleFactor = in.readFloat();
+            OmokBoard newBoard = new OmokBoard(scaleFactor, num_xs, num_ys);
+
+            int num_objects = in.readInt();
+            int[] arrayPosX = new int[num_objects];
+            int[] arrayPosY = new int[num_objects];
+            in.readIntArray(arrayPosX);
+            in.readIntArray(arrayPosY);
+
+            for (int i=0; i<num_objects; i++)
+            {
+                newBoard.addObject(arrayPosX[i], arrayPosY[i]);
+            }
+
+            return newBoard;
+        }
+
+        public OmokBoard[] newArray(int size) {
+            return new OmokBoard[size];
+        }
+    };
 }
